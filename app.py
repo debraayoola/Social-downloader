@@ -4,14 +4,10 @@ app.py — Universal social media downloader API
 POST /api/download
   body: {"url": "https://..."}
   returns: {
-    "post_title": ...,
-    "username": ...,
-    "timestamp": ...,
-    "platform": ...,
-    "media_type": "video" | "image" | "audio",
-    "media_url": "https://yourdomain.com/media/<id>.mp4",   <-- Discord-playable
-    "duration": ...,
-    "expires_at": ...
+    "post_title", "username", "profile_url", "timestamp" (unix),
+    "platform", "media_type", "view_count", "like_count",
+    "comment_count", "thumbnail_url", "original_url",
+    "file_size_bytes", "media_url", "duration", "expires_at"
   }
 
 GET /media/<filename>
@@ -20,8 +16,6 @@ GET /media/<filename>
 """
 
 import os
-import threading
-import time
 from flask import Flask, request, jsonify, send_from_directory, abort
 
 from extractor import extract_and_download, MEDIA_DIR, UnsupportedURLError, BlockedPlatformError
@@ -29,7 +23,6 @@ from cleanup import start_cleanup_thread, METADATA_STORE, FILE_TTL_SECONDS
 
 app = Flask(__name__)
 
-# Set this to your real public domain/IP once deployed (behind HTTPS!)
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
 
 
@@ -48,10 +41,8 @@ def download():
     except UnsupportedURLError as e:
         return jsonify({"error": str(e)}), 422
     except Exception as e:
-        # yt-dlp raises generic DownloadError etc. for unsupported/private/removed posts
         return jsonify({"error": f"Failed to process URL: {str(e)}"}), 422
 
-    # Track metadata for cleanup + repeated lookups
     METADATA_STORE[result["job_id"]] = result
 
     media_url = f"{BASE_URL}/media/{result['filename']}"
@@ -59,9 +50,16 @@ def download():
     return jsonify({
         "post_title": result["post_title"],
         "username": result["username"],
+        "profile_url": result["profile_url"],
         "timestamp": result["timestamp"],
         "platform": result["platform"],
         "media_type": result["media_type"],
+        "view_count": result["view_count"],
+        "like_count": result["like_count"],
+        "comment_count": result["comment_count"],
+        "thumbnail_url": result["thumbnail_url"],
+        "original_url": result["original_url"],
+        "file_size_bytes": result["file_size_bytes"],
         "duration": result.get("duration"),
         "media_url": media_url,
         "expires_at": result["created_at"] + FILE_TTL_SECONDS,
@@ -73,9 +71,6 @@ def serve_media(filename):
     filepath = os.path.join(MEDIA_DIR, filename)
     if not os.path.exists(filepath):
         abort(404)
-
-    # conditional=True (default) enables Range/If-Modified-Since handling,
-    # which Discord needs to stream/scrub video instead of full-downloading it.
     return send_from_directory(MEDIA_DIR, filename, conditional=True)
 
 
