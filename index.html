@@ -26,24 +26,27 @@
 
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
 
-        html { -webkit-text-size-adjust:100%; }
+        html { -webkit-text-size-adjust:100%; background: var(--bg); min-height:100%; }
 
         body {
             font-family:'Inter',sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height:100vh;
+            min-height:100dvh;
             -webkit-font-smoothing:antialiased;
             overscroll-behavior-y:none;
         }
 
-        /* Layered futuristic backdrop: base glow + fine grid + a slow scan sweep as the signature element */
+        /* Layered futuristic backdrop. Sized in vmin (not vw/vh) so the same
+           composition holds up whether it's a tall phone, a zoomed-out phone
+           viewport, or an ultra-wide desktop window — nothing stretches or thins out. */
         .bg {
             position:fixed; inset:0; z-index:0;
             background:
-                radial-gradient(ellipse 70% 55% at 18% 15%, rgba(0,229,255,0.09) 0%, transparent 60%),
-                radial-gradient(ellipse 55% 45% at 88% 90%, rgba(185,103,255,0.07) 0%, transparent 60%),
-                radial-gradient(ellipse 40% 40% at 90% 10%, rgba(255,0,153,0.04) 0%, transparent 55%),
+                radial-gradient(circle 55vmin at 15% 10%, rgba(0,229,255,0.10) 0%, transparent 65%),
+                radial-gradient(circle 45vmin at 88% 92%, rgba(185,103,255,0.08) 0%, transparent 65%),
+                radial-gradient(circle 32vmin at 92% 8%, rgba(255,0,153,0.05) 0%, transparent 60%),
                 var(--bg);
         }
 
@@ -53,14 +56,14 @@
                 linear-gradient(var(--grid-line) 1px, transparent 1px),
                 linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
             background-size: 42px 42px;
-            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 0%, transparent 75%);
-            mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 0%, transparent 75%);
+            -webkit-mask-image: radial-gradient(circle 65vmin at 50% 0%, #000 0%, transparent 75%);
+            mask-image: radial-gradient(circle 65vmin at 50% 0%, #000 0%, transparent 75%);
             opacity:0.6;
         }
 
         .bg-scan {
-            position:fixed; left:0; right:0; height:140px; z-index:0;
-            top:-140px;
+            position:fixed; left:0; right:0; height:16vmin; z-index:0;
+            top:-16vmin;
             background: linear-gradient(180deg, transparent, rgba(0,229,255,0.05), transparent);
             animation: scanSweep 9s ease-in-out infinite;
             pointer-events:none;
@@ -78,11 +81,31 @@
             .bg-scan { animation: none; display:none; }
         }
 
+        /* On wide desktop viewports the centered card would otherwise float in a
+           flat void — a pair of thin gradient rails frame it so the layout reads
+           as intentional rather than a phone screen pasted onto a black page. */
+        .bg-rail {
+            position:fixed; top:0; bottom:0; width:1px; z-index:0;
+            background: linear-gradient(180deg, transparent, rgba(0,229,255,0.15) 15%, rgba(185,103,255,0.1) 85%, transparent);
+            display:none;
+        }
+
+        .bg-rail.left  { left:calc(50% - 360px); }
+        .bg-rail.right { right:calc(50% - 360px); }
+
+        @media (min-width:860px) {
+            .bg-rail { display:block; }
+        }
+
         .app {
             position:relative; z-index:1;
             max-width:640px;
             margin:0 auto;
             padding:28px 18px 60px;
+        }
+
+        @media (min-width:860px) {
+            .app { padding-top:64px; }
         }
 
         /* ─── Header ─── */
@@ -531,6 +554,8 @@
     <div class="bg"></div>
     <div class="bg-grid"></div>
     <div class="bg-scan"></div>
+    <div class="bg-rail left"></div>
+    <div class="bg-rail right"></div>
 
     <div class="app">
         <header class="header">
@@ -814,7 +839,7 @@ Then redeploy to Render.`;
                         </div>
                         <div class="format-size">${sz}</div>
                         <button class="dl-link" data-idx="${i}" type="button">
-                            <i class="fas fa-download"></i> <span class="dl-label">DOWNLOAD</span>
+                            <i class="fas fa-download"></i> <span class="dl-label">DL</span>
                         </button>
                     </div>
                 `;
@@ -892,6 +917,10 @@ Then redeploy to Render.`;
             loadHistory();
         }
 
+        const THUMB_FALLBACK = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+            '<svg xmlns="http://www.w3.org/2000/svg" width="52" height="30"><rect width="52" height="30" fill="#050508"/></svg>'
+        );
+
         function loadHistory() {
             const h = JSON.parse(localStorage.getItem('sg_hist') || '[]');
             const list = $('historyList');
@@ -900,8 +929,8 @@ Then redeploy to Render.`;
                 return;
             }
             list.innerHTML = h.map(item => `
-                <div class="history-item" onclick="loadHist('${esc(item.url)}')">
-                    <img class="history-thumb" src="${item.thumb || 'data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"52\" height=\"30\"><rect width=\"52\" height=\"30\" fill=\"%23050508\"/></svg>'}" onerror="this.src='data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"52\" height=\"30\"><rect width=\"52\" height=\"30\" fill=\"%23050508\"/></svg>'">
+                <div class="history-item" data-url="${esc(item.url)}">
+                    <img class="history-thumb" src="${esc(item.thumb) || THUMB_FALLBACK}">
                     <div class="history-info">
                         <div class="history-name">${esc(item.title)}</div>
                         <div class="history-url">${esc(item.url)}</div>
@@ -909,6 +938,13 @@ Then redeploy to Render.`;
                     <div class="history-time">${timeAgo(item.t)}</div>
                 </div>
             `).join('');
+
+            list.querySelectorAll('.history-item').forEach(el => {
+                el.querySelector('.history-thumb').addEventListener('error', function () {
+                    this.src = THUMB_FALLBACK;
+                });
+                el.addEventListener('click', () => loadHist(el.dataset.url));
+            });
         }
 
         function loadHist(url) {
