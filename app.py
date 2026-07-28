@@ -27,6 +27,14 @@ CORS(app, origins=["*"])
 
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
 
+# Folder this file lives in — index.html should sit right next to app.py in the repo
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+@app.route("/", methods=["GET"])
+def home():
+    return send_from_directory(ROOT_DIR, "index.html")
+
 
 @app.route("/api/download", methods=["POST"])
 def download():
