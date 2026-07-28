@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#050508">
+    <title>SocialGrab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg: #050508;
+            --surface: #0f0f18;
+            --surface-2: #161622;
+            --cyan: #00e5ff;
+            --pink: #ff0099;
+            --purple: #b967ff;
+            --green: #00e676;
+            --text: #f0f0f5;
+            --text-2: #a0a8b8;
+            --text-3: #606878;
+            --border: rgba(255,255,255,0.06);
+            --border-accent: rgba(0,229,255,0.25);
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+        html { -webkit-text-size-adjust:100%; }
+
+        body {
+            font-family:'Inter',sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height:100vh;
+            -webkit-font-smoothing:antialiased;
+            overscroll-behavior-y:none;
+        }
+
+        /* Static dark gradient background — zero animation, GPU-friendly */
+        .bg {
+            position:fixed; inset:0; z-index:0;
+            background:
+                radial-gradient(ellipse 80% 60% at 20% 20%, rgba(0,229,255,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 85% 85%, rgba(255,0,153,0.04) 0%, transparent 60%),
+                var(--bg);
+        }
+
+        .app {
+            position:relative; z-index:1;
+            max-width:640px;
+            margin:0 auto;
+            padding:28px 18px 60px;
+        }
+
+        /* ─── Header ─── */
+        .header {
+            text-align:center;
+            margin-bottom:32px;
+            animation: fadeIn 0.5s ease both;
+        }
+
+        .logo {
+            display:inline-flex; align-items:center; gap:12px;
+            margin-bottom:10px;
+        }
+
+        .logo-icon {
+            width:48px; height:48px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border-radius:14px;
+            display:flex; align-items:center; justify-content:center;
+            font-size:22px; color:#000;
+            box-shadow: 0 4px 24px rgba(0,229,255,0.25);
+        }
+
+        .logo-text {
+            font-size:28px; font-weight:800; letter-spacing:-0.5px;
+            background: linear-gradient(135deg, #fff, var(--cyan));
+            -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+        }
+
+        .tagline {
+            font-size:14px; color:var(--text-2); line-height:1.6;
+            max-width:380px; margin:0 auto;
+        }
+
+        .platforms {
+            display:flex; justify-content:center; gap:8px;
+            margin-top:18px; flex-wrap:wrap;
+        }
+
+        .pill {
+            display:flex; align-items:center; gap:6px;
+            padding:6px 12px;
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:100px; font-size:12px; font-weight:600;
+            color:var(--text-2);
+        }
+
+        .pill i { font-size:13px; }
+
+        /* ─── Card ─── */
+        .card {
+            background:var(--surface);
+            border:1px solid var(--border);
+            border-radius:20px;
+            padding:24px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            animation: fadeIn 0.5s ease 0.1s both;
+        }
+
+        .card-top-line {
+            height:2px;
+            background: linear-gradient(90deg, var(--cyan), var(--pink), var(--purple));
+            border-radius:2px;
+            margin:-24px -24px 24px -24px;
+            opacity:0.7;
+        }
+
+        /* ─── Input ─── */
+        .input-label {
+            font-size:11px; font-weight:700; color:var(--cyan);
+            text-transform:uppercase; letter-spacing:2px;
+            margin-bottom:10px;
+        }
+
+        .input-box {
+            position:relative;
+            background:var(--bg);
+            border:1.5px solid var(--border);
+            border-radius:16px;
+            padding:4px;
+            transition:border-color 0.2s ease;
+        }
+
+        .input-box:focus-within {
+            border-color:var(--border-accent);
+        }
+
+        .url-input {
+            width:100%;
+            padding:14px 100px 14px 44px;
+            background:transparent; border:none;
+            color:var(--text); font-size:16px; /* 16px prevents iOS zoom */
+            font-family:'JetBrains Mono',monospace;
+            outline:none;
+        }
+
+        .url-input::placeholder { color:var(--text-3); font-family:'Inter',sans-serif; }
+
+        .input-icon {
+            position:absolute; left:16px; top:50%;
+            transform:translateY(-50%);
+            color:var(--text-3); font-size:16px;
+            pointer-events:none;
+        }
+
+        .input-box:focus-within .input-icon { color:var(--cyan); }
+
+        .paste-btn {
+            position:absolute; right:6px; top:50%;
+            transform:translateY(-50%);
+            padding:8px 14px;
+            background:rgba(0,229,255,0.08);
+            border:1px solid rgba(0,229,255,0.15);
+            border-radius:12px;
+            color:var(--cyan); font-size:13px; font-weight:600;
+            cursor:pointer; font-family:inherit;
+            display:flex; align-items:center; gap:6px;
+            transition:all 0.15s ease;
+        }
+
+        .paste-btn:active { transform:translateY(-50%) scale(0.96); }
+
+        /* ─── Fetch Button ─── */
+        .fetch-btn {
+            width:100%; margin-top:12px;
+            padding:16px;
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            border:none; border-radius:16px;
+            color:#000; font-size:16px; font-weight:800;
+            font-family:inherit; cursor:pointer;
+            display:flex; align-items:center; justify-content:center; gap:10px;
+            box-shadow: 0 4px 24px rgba(0,229,255,0.2);
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+            touch-action: manipulation;
+        }
+
+        .fetch-btn:active { transform:scale(0.98); }
+
+        .fetch-btn:disabled {
+            opacity:0.5; cursor:not-allowed; transform:none;
+        }
+
+        .fetch-btn .spinner {
+            display:none; width:18px; height:18px;
+            border:2.5px solid rgba(0,0,0,0.2);
+            border-top-color:#000; border-radius:50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        .fetch-btn.loading .spinner { display:block; }
+
+        @keyframes spin { to{transform:rotate(360deg)} }
+
+        /* ─── Status ─── */
+        .status {
+            display:flex; align-items:center; gap:10px;
+            margin-top:14px; font-size:13px;
+            color:var(--text-3);
+            font-family:'JetBrains Mono',monospace;
+            min-height:20px;
+        }
+
+        .status.detected { color:var(--cyan); }
+        .status i { font-size:13px; }
+
+        .status-dot {
+            width:6px; height:6px; border-radius:50%;
+            background:var(--cyan);
+            box-shadow:0 0 8px var(--cyan);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        /* ─── Results ─── */
+        .results {
+            max-height:0; overflow:hidden;
+            transition: max-height 0.5s cubic-bezier(0.22,1,0.36,1), opacity 0.4s ease;
+            opacity:0;
+        }
+
+        .results.open {
+            max-height:3000px;
+            opacity:1;
+            margin-top:24px;
+            padding-top:24px;
+            border-top:1px solid var(--border);
+        }
+
+        .preview {
+            display:grid; grid-template-columns:140px 1fr;
+            gap:16px; margin-bottom:24px;
+        }
+
+        .thumb {
+            position:relative; border-radius:14px; overflow:hidden;
+            aspect-ratio:16/9; background:var(--bg);
+            border:1px solid var(--border);
+        }
+
+        .thumb img { width:100%; height:100%; object-fit:cover; }
+
+        .thumb::after {
+            content:""; position:absolute; inset:0;
+            background:linear-gradient(to top,rgba(0,0,0,0.5),transparent 60%);
+        }
+
+        .thumb-dur {
+            position:absolute; bottom:8px; right:8px; z-index:2;
+            padding:3px 8px; background:rgba(0,0,0,0.8);
+            border-radius:6px; font-size:11px; font-weight:700;
+            font-family:'JetBrains Mono',monospace;
+        }
+
+        .info { display:flex; flex-direction:column; gap:6px; justify-content:center; }
+
+        .info-title {
+            font-size:17px; font-weight:700; line-height:1.3;
+            display:-webkit-box; -webkit-line-clamp:2;
+            -webkit-box-orient:vertical; overflow:hidden;
+        }
+
+        .info-meta {
+            display:flex; flex-wrap:wrap; gap:12px;
+            font-size:12px; color:var(--text-2);
+        }
+
+        .info-meta span { display:flex; align-items:center; gap:5px; }
+        .info-meta i { color:var(--cyan); font-size:10px; }
+
+        .info-desc {
+            font-size:13px; color:var(--text-3); line-height:1.5;
+            display:-webkit-box; -webkit-line-clamp:2;
+            -webkit-box-orient:vertical; overflow:hidden;
+        }
+
+        /* ─── Formats ─── */
+        .formats-title {
+            font-size:12px; font-weight:700; color:var(--text-2);
+            text-transform:uppercase; letter-spacing:1px;
+            margin-bottom:12px;
+        }
+
+        .format-list {
+            display:flex; flex-direction:column; gap:8px;
+        }
+
+        .format-row {
+            display:flex; align-items:center; gap:12px;
+            padding:14px 16px;
+            background:var(--bg); border:1px solid var(--border);
+            border-radius:14px;
+            transition: all 0.15s ease;
+            touch-action: manipulation;
+        }
+
+        .format-row:active { transform:scale(0.99); }
+
+        .format-row:hover { border-color:var(--border-accent); }
+
+        .format-q {
+            font-size:15px; font-weight:700;
+            min-width:56px;
+        }
+
+        .format-q i { color:var(--cyan); margin-right:6px; font-size:12px; }
+
+        .format-details {
+            flex:1; display:flex; flex-wrap:wrap; gap:8px;
+            font-size:12px; color:var(--text-3);
+            font-family:'JetBrains Mono',monospace;
+        }
+
+        .format-size {
+            font-size:14px; font-weight:700; color:var(--green);
+            min-width:70px; text-align:right;
+        }
+
+        .dl-link {
+            padding:8px 16px;
+            background: linear-gradient(135deg, rgba(0,229,255,0.1), rgba(185,103,255,0.1));
+            border:1px solid var(--border); border-radius:10px;
+            color:var(--cyan); font-size:12px; font-weight:700;
+            text-decoration:none; white-space:nowrap;
+            transition:all 0.15s ease;
+            display:flex; align-items:center; gap:6px;
+        }
+
+        .dl-link:active { transform:scale(0.95); }
+
+        .dl-link:hover {
+            background: linear-gradient(135deg, var(--cyan), var(--purple));
+            color:#000; border-color:transparent;
+        }
+
+        /* ─── Error ─── */
+        .error-box {
+            display:none; text-align:center;
+            padding:32px 16px;
+            animation: shake 0.4s ease;
+        }
+
+        .error-box.show { display:block; }
+
+        .error-icon {
+            width:56px; height:56px;
+            background:rgba(255,0,153,0.08);
+            border:1px solid rgba(255,0,153,0.2);
+            border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            margin:0 auto 14px; font-size:22px; color:var(--pink);
+        }
+
+        .error-title { font-size:17px; font-weight:700; margin-bottom:6px; }
+        .error-msg { font-size:13px; color:var(--text-2); line-height:1.6; max-width:400px; margin:0 auto 16px; }
+
+        .error-hint {
+            background:var(--bg); border:1px solid var(--border);
+            border-radius:12px; padding:14px;
+            font-size:12px; color:var(--text-3); line-height:1.7;
+            text-align:left; max-width:440px; margin:0 auto;
+            font-family:'JetBrains Mono',monospace;
+        }
+
+        .error-hint code {
+            color:var(--green); font-family:inherit;
+            background:rgba(0,230,118,0.08);
+            padding:1px 5px; border-radius:4px;
+        }
+
+        @keyframes shake {
+            0%,100%{transform:translateX(0)}
+            25%{transform:translateX(-8px)}
+            75%{transform:translateX(8px)}
+        }
+
+        /* ─── History ─── */
+        .history { margin-top:28px; animation: fadeIn 0.5s ease 0.2s both; }
+
+        .history-header {
+            display:flex; justify-content:space-between; align-items:center;
+            margin-bottom:12px;
+        }
+
+        .history-title {
+            font-size:14px; font-weight:800; text-transform:uppercase;
+            letter-spacing:1px; color:var(--text);
+        }
+
+        .history-title i { color:var(--cyan); margin-right:6px; }
+
+        .history-clear {
+            font-size:12px; color:var(--text-3); background:none;
+            border:none; cursor:pointer; font-family:inherit; font-weight:600;
+        }
+
+        .history-list { display:flex; flex-direction:column; gap:8px; }
+
+        .history-item {
+            display:flex; align-items:center; gap:12px;
+            padding:12px 14px;
+            background:var(--surface); border:1px solid var(--border);
+            border-radius:14px; cursor:pointer;
+            transition:all 0.15s ease;
+            touch-action: manipulation;
+        }
+
+        .history-item:active { transform:scale(0.99); }
+
+        .history-item:hover { border-color:var(--border-accent); }
+
+        .history-thumb {
+            width:52px; height:30px; border-radius:8px;
+            object-fit:cover; background:var(--bg); flex-shrink:0;
+        }
+
+        .history-info { flex:1; min-width:0; }
+        .history-name { font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .history-url { font-size:11px; color:var(--text-3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-family:'JetBrains Mono',monospace; }
+        .history-time { font-size:11px; color:var(--text-3); flex-shrink:0; font-family:'JetBrains Mono',monospace; }
+
+        .empty { text-align:center; padding:32px; color:var(--text-3); font-size:13px; border:1px dashed var(--border); border-radius:14px; }
+
+        /* ─── Toast ─── */
+        .toast-wrap {
+            position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+            z-index:1000; display:flex; flex-direction:column; gap:8px;
+            width:calc(100% - 32px); max-width:400px;
+            pointer-events:none;
+        }
+
+        .toast {
+            padding:14px 18px; background:var(--surface);
+            border:1px solid var(--border); border-radius:14px;
+            box-shadow:0 12px 40px rgba(0,0,0,0.5);
+            display:flex; align-items:center; gap:12px;
+            font-size:13px; font-weight:600;
+            animation: toastIn 0.35s cubic-bezier(0.22,1,0.36,1);
+            pointer-events:auto;
+        }
+
+        .toast.ok { border-left:3px solid var(--green); }
+        .toast.bad { border-left:3px solid var(--pink); }
+        .toast.inf { border-left:3px solid var(--cyan); }
+
+        .toast i { font-size:15px; }
+        .toast.ok i { color:var(--green); }
+        .toast.bad i { color:var(--pink); }
+        .toast.inf i { color:var(--cyan); }
+
+        @keyframes toastIn {
+            from { transform:translateY(20px); opacity:0; }
+            to { transform:translateY(0); opacity:1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity:0; transform:translateY(12px); }
+            to { opacity:1; transform:translateY(0); }
+        }
+
+        /* ─── Responsive ─── */
+        @media (max-width:480px) {
+            .preview { grid-template-columns:1fr; }
+            .thumb { max-height:180px; }
+            .format-row { flex-wrap:wrap; }
+            .format-size { width:100%; text-align:left; margin-top:4px; }
+            .dl-link { width:100%; justify-content:center; margin-top:4px; }
+            .app { padding:20px 14px 40px; }
+            .card { padding:18px; }
+            .card-top-line { margin:-18px -18px 18px -18px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg"></div>
+
+    <div class="app">
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon"><i class="fas fa-cloud-download-alt"></i></div>
+                <span class="logo-text">SocialGrab</span>
+            </div>
+            <p class="tagline">Paste a link from any social platform and download instantly.</p>
+            <div class="platforms">
+                <div class="pill"><i class="fab fa-youtube" style="color:#ff4444"></i> YouTube</div>
+                <div class="pill"><i class="fab fa-tiktok" style="color:#fff"></i> TikTok</div>
+                <div class="pill"><i class="fab fa-instagram" style="color:#ff5e9a"></i> IG</div>
+                <div class="pill"><i class="fab fa-twitter" style="color:#4facfe"></i> X</div>
+                <div class="pill"><i class="fab fa-reddit" style="color:#ff6b35"></i> Reddit</div>
+            </div>
+        </header>
+
+        <div class="card">
+            <div class="card-top-line"></div>
+
+            <div class="input-section">
+                <div class="input-label">Paste Video Link</div>
+                <div class="input-box">
+                    <i class="fas fa-link input-icon"></i>
+                    <input type="text" class="url-input" id="urlInput" placeholder="https://youtube.com/watch?v=..." autocomplete="off" inputmode="url">
+                    <button class="paste-btn" id="pasteBtn" onclick="doPaste()">
+                        <i class="fas fa-paste"></i> Paste
+                    </button>
+                </div>
+
+                <button class="fetch-btn" id="fetchBtn" onclick="doFetch()">
+                    <span class="spinner"></span>
+                    <span class="btn-text">Fetch Video</span>
+                </button>
+
+                <div class="status" id="status">
+                    <i class="fas fa-terminal"></i>
+                    <span>Waiting for input...</span>
+                </div>
+            </div>
+
+            <!-- Results -->
+            <div class="results" id="results">
+                <div class="preview">
+                    <div class="thumb">
+                        <img id="vThumb" src="" alt="">
+                        <div class="thumb-dur" id="vDur">0:00</div>
+                    </div>
+                    <div class="info">
+                        <div class="info-title" id="vTitle">Title</div>
+                        <div class="info-meta">
+                            <span><i class="fas fa-user"></i> <span id="vAuth">—</span></span>
+                            <span><i class="fas fa-clock"></i> <span id="vTime">—</span></span>
+                        </div>
+                        <div class="info-desc" id="vDesc">No description.</div>
+                    </div>
+                </div>
+
+                <div class="formats-title">Available Formats</div>
+                <div class="format-list" id="formatList"></div>
+            </div>
+
+            <!-- Error -->
+            <div class="error-box" id="errorBox">
+                <div class="error-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                <div class="error-title" id="errTitle">Error</div>
+                <div class="error-msg" id="errMsg">Something went wrong.</div>
+                <div class="error-hint" id="errHint"></div>
+            </div>
+        </div>
+
+        <!-- History -->
+        <div class="history">
+            <div class="history-header">
+                <span class="history-title"><i class="fas fa-history"></i> Recent</span>
+                <button class="history-clear" onclick="clearHistory()">Clear</button>
+            </div>
+            <div class="history-list" id="historyList">
+                <div class="empty">No history yet.</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-wrap" id="toastWrap"></div>
+
+    <script>
+        const API = "https://social-downloader-ank4.onrender.com/api/download";
+
+        const PLATFORMS = {
+            youtube: { name:"YouTube", icon:"fab fa-youtube", color:"#ff4444", re:/youtube\.com|youtu\.be/ },
+            tiktok:  { name:"TikTok",  icon:"fab fa-tiktok",  color:"#fff",     re:/tiktok\.com/ },
+            instagram:{ name:"Instagram",icon:"fab fa-instagram",color:"#ff5e9a",re:/instagram\.com/ },
+            twitter: { name:"X",       icon:"fab fa-twitter", color:"#4facfe", re:/twitter\.com|x\.com/ },
+            reddit:  { name:"Reddit",  icon:"fab fa-reddit",  color:"#ff6b35", re:/reddit\.com/ },
+            facebook:{ name:"Facebook",icon:"fab fa-facebook",color:"#4facfe", re:/facebook\.com|fb\.watch/ },
+            vimeo:   { name:"Vimeo",   icon:"fab fa-vimeo-v", color:"#1ab7ea", re:/vimeo\.com/ },
+        };
+
+        let formats = [], filter = 'all';
+        const $ = id => document.getElementById(id);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadHistory();
+            $('urlInput').addEventListener('input', detect);
+            $('urlInput').addEventListener('keydown', e => { if(e.key==='Enter') doFetch(); });
+        });
+
+        // ─── Detect Platform ───
+        function detect() {
+            const url = $('urlInput').value.trim();
+            const st = $('status');
+            if (!url) {
+                st.innerHTML = '<i class="fas fa-terminal"></i><span>Waiting for input...</span>';
+                st.classList.remove('detected');
+                return;
+            }
+            for (const [k,p] of Object.entries(PLATFORMS)) {
+                if (p.re.test(url)) {
+                    st.innerHTML = `<span class="status-dot"></span><span>Detected <strong style="color:${p.color}">${p.name}</strong></span>`;
+                    st.classList.add('detected');
+                    return;
+                }
+            }
+            st.innerHTML = '<span class="status-dot"></span><span>Universal link detected</span>';
+            st.classList.add('detected');
+        }
+
+        // ─── Paste ───
+        async function doPaste() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (text) {
+                    $('urlInput').value = text;
+                    detect();
+                    toast('Pasted', 'inf');
+                }
+            } catch {
+                // Silently fail on mobile — just focus input
+                $('urlInput').focus();
+            }
+        }
+
+        // ─── Fetch ───
+        async function doFetch() {
+            const url = $('urlInput').value.trim();
+            if (!url) { $('urlInput').focus(); return; }
+
+            setLoad(true);
+            closeResults();
+            hideError();
+
+            try {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), 55000);
+
+                const res = await fetch(API, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({url}),
+                    signal:ctrl.signal
+                });
+                clearTimeout(t);
+
+                if (!res.ok) {
+                    const data = await res.json().catch(()=>({}));
+                    throw new Error(data.error || `Server error ${res.status}`);
+                }
+
+                const data = await res.json();
+                if (data.error) throw new Error(data.error);
+
+                showResults(data, url);
+                addHistory(data, url);
+                toast('Video loaded', 'ok');
+
+            } catch (err) {
+                console.error(err);
+                let title = 'Failed to fetch';
+                let msg = err.message;
+                let hint = '';
+
+                if (err.name === 'TypeError' && msg.includes('Failed to fetch')) {
+                    title = 'Connection Blocked';
+                    msg = 'Your browser blocked the request. This happens when the backend does not allow cross-origin requests (CORS).';
+                    hint = `Fix: Add CORS to your backend app.
+
+Flask:
+<code>from flask_cors import CORS</code>
+<code>CORS(app, origins=["*"])</code>
+
+Then redeploy to Render.`;
+                } else if (err.name === 'AbortError') {
+                    title = 'Timed Out';
+                    msg = 'Server took too long. Render free tiers sleep — tap Fetch again to wake it up.';
+                }
+
+                showError(title, msg, hint);
+                toast(title, 'bad');
+            } finally {
+                setLoad(false);
+            }
+        }
+
+        // ─── Show Results ───
+        function showResults(data, originalUrl) {
+            // Backend returns one already-downloaded file, not a list of formats,
+            // so we build a single-item "formats" list to reuse the existing UI.
+            formats = [{
+                quality: data.media_type,
+                ext: (data.media_url || '').split('.').pop() || 'mp4',
+                filesize: data.file_size_bytes,
+                url: data.media_url,
+                format_note: data.platform
+            }];
+
+            $('vTitle').textContent = data.post_title || 'Untitled';
+            $('vAuth').textContent = data.username || 'Unknown';
+            $('vDesc').textContent = data.profile_url ? `Profile: ${data.profile_url}` : (data.platform || 'No additional info.');
+
+            $('vThumb').src = data.thumbnail_url || '';
+            $('vThumb').onerror = function() {
+                this.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="140" height="79" fill="%23050508"><rect width="140" height="79"/></svg>';
+            };
+
+            const dur = fmtDur(data.duration);
+            $('vDur').textContent = dur;
+            $('vTime').textContent = dur;
+
+            renderFormats();
+            $('results').classList.add('open');
+            $('results').scrollIntoView({behavior:'smooth', block:'nearest'});
+        }
+
+        function renderFormats() {
+            let list = formats;
+
+            if (!list.length || !list[0].url) {
+                $('formatList').innerHTML = '<div class="empty">No media found.</div>';
+                return;
+            }
+
+            $('formatList').innerHTML = list.map(f => {
+                const isAudio = f.quality === 'audio';
+                const isImage = f.quality === 'image';
+                const q = isAudio ? 'Audio' : isImage ? 'Image' : 'Video';
+                const ext = (f.ext || 'mp4').toUpperCase();
+                const sz = f.filesize ? fmtBytes(f.filesize) : '—';
+                const note = f.format_note || '';
+                const icon = isAudio ? 'fa-music' : isImage ? 'fa-image' : 'fa-video';
+                return `
+                    <div class="format-row">
+                        <div class="format-q"><i class="fas ${icon}"></i>${q}</div>
+                        <div class="format-details">
+                            <span>${ext}</span>
+                            ${note?`<span>${note}</span>`:''}
+                        </div>
+                        <div class="format-size">${sz}</div>
+                        <a href="${f.url}" target="_blank" rel="noopener noreferrer" class="dl-link" onclick="toast('Starting download...','ok')">
+                            <i class="fas fa-download"></i> DL
+                        </a>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // ─── Error ───
+        function showError(title, msg, hint) {
+            $('errTitle').textContent = title;
+            $('errMsg').textContent = msg;
+            $('errHint').innerHTML = hint ? hint.replace(/
+/g,'<br>') : '';
+            $('errHint').style.display = hint ? 'block' : 'none';
+            $('errorBox').classList.add('show');
+        }
+
+        function hideError() { $('errorBox').classList.remove('show'); }
+        function closeResults() { $('results').classList.remove('open'); }
+
+        function setLoad(v) {
+            const btn = $('fetchBtn');
+            btn.disabled = v;
+            btn.classList.toggle('loading', v);
+            btn.querySelector('.btn-text').textContent = v ? 'Fetching...' : 'Fetch Video';
+        }
+
+        // ─── History ───
+        function addHistory(data, url) {
+            let h = JSON.parse(localStorage.getItem('sg_hist') || '[]');
+            const item = { title: data.post_title || 'Untitled', url, thumb: data.thumbnail_url || '', t: Date.now() };
+            h = h.filter(x => x.url !== url);
+            h.unshift(item);
+            if (h.length > 10) h = h.slice(0, 10);
+            localStorage.setItem('sg_hist', JSON.stringify(h));
+            loadHistory();
+        }
+
+        function loadHistory() {
+            const h = JSON.parse(localStorage.getItem('sg_hist') || '[]');
+            const list = $('historyList');
+            if (!h.length) {
+                list.innerHTML = '<div class="empty">No history yet. Paste a link to begin.</div>';
+                return;
+            }
+            list.innerHTML = h.map(item => `
+                <div class="history-item" onclick="loadHist('${esc(item.url)}')">
+                    <img class="history-thumb" src="${item.thumb || 'data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"52\" height=\"30\"><rect width=\"52\" height=\"30\" fill=\"%23050508\"/></svg>'}" onerror="this.src='data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"52\" height=\"30\"><rect width=\"52\" height=\"30\" fill=\"%23050508\"/></svg>'">
+                    <div class="history-info">
+                        <div class="history-name">${esc(item.title)}</div>
+                        <div class="history-url">${esc(item.url)}</div>
+                    </div>
+                    <div class="history-time">${timeAgo(item.t)}</div>
+                </div>
+            `).join('');
+        }
+
+        function loadHist(url) {
+            $('urlInput').value = url;
+            detect();
+            doFetch();
+        }
+
+        function clearHistory() {
+            localStorage.removeItem('sg_hist');
+            loadHistory();
+            toast('History cleared', 'inf');
+        }
+
+        // ─── Toast ───
+        function toast(msg, type='inf') {
+            const wrap = $('toastWrap');
+            const t = document.createElement('div');
+            t.className = `toast ${type==='ok'?'ok':type==='bad'?'bad':'inf'}`;
+            const icons = { ok:'fa-check-circle', bad:'fa-times-circle', inf:'fa-info-circle' };
+            t.innerHTML = `<i class="fas ${icons[type]||icons.inf}"></i> ${esc(msg)}`;
+            wrap.appendChild(t);
+            setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(10px)'; setTimeout(()=>t.remove(),300); }, 3500);
+        }
+
+        // ─── Utils ───
+        function fmtDur(s) {
+            if (!s) return '0:00';
+            const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = Math.floor(s%60);
+            if (h) return `${h}:${m.toString().padStart(2,'0')}:${sec.toString().padStart(2,'0')}`;
+            return `${m}:${sec.toString().padStart(2,'0')}`;
+        }
+        function fmtBytes(b) {
+            if (!b) return '—';
+            const u = ['B','KB','MB','GB']; const i = Math.floor(Math.log(b)/Math.log(1024));
+            return (b/Math.pow(1024,i)).toFixed(1)+' '+u[i];
+        }
+        function timeAgo(t) {
+            const s = Math.floor((Date.now()-t)/1000);
+            if (s<60) return 'now';
+            const m = Math.floor(s/60); if (m<60) return `${m}m`;
+            const h = Math.floor(m/60); if (h<24) return `${h}h`;
+            return `${Math.floor(h/24)}d`;
+        }
+        function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+    </script>
+</body>
+</html>
