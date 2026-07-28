@@ -374,6 +374,8 @@
             text-decoration:none; white-space:nowrap;
             transition:all 0.15s ease;
             display:flex; align-items:center; gap:6px;
+            font-family:inherit; cursor:pointer;
+            touch-action: manipulation;
         }
 
         .dl-link:active { transform:scale(0.95); }
@@ -381,6 +383,10 @@
         .dl-link:hover {
             background: linear-gradient(135deg, var(--cyan), var(--purple));
             color:#000; border-color:transparent;
+        }
+
+        .dl-link:disabled {
+            opacity:0.6; cursor:wait; pointer-events:none;
         }
 
         /* ─── Error ─── */
@@ -655,15 +661,25 @@
         // ─── Paste ───
         async function doPaste() {
             try {
+                if (!navigator.clipboard || !navigator.clipboard.readText) {
+                    throw new Error('unsupported');
+                }
                 const text = await navigator.clipboard.readText();
-                if (text) {
-                    $('urlInput').value = text;
+                if (text && text.trim()) {
+                    $('urlInput').value = text.trim();
                     detect();
-                    toast('Pasted', 'inf');
+                    toast('Pasted from clipboard', 'ok');
+                } else {
+                    toast('Clipboard is empty', 'inf');
                 }
             } catch {
-                // Silently fail on mobile — just focus input
-                $('urlInput').focus();
+                // Most mobile browsers block programmatic clipboard reads outside
+                // a direct tap on some platforms, or require a permission the user
+                // hasn't granted yet. Focus + select so the OS paste option shows up.
+                const input = $('urlInput');
+                input.focus();
+                input.select();
+                toast('Long-press the field to paste', 'inf');
             }
         }
 
@@ -675,6 +691,19 @@
             setLoad(true);
             closeResults();
             hideError();
+
+            const st = $('status');
+            let elapsed = 0;
+            st.classList.add('detected');
+            st.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i><span>Connecting...</span>';
+            const ticker = setInterval(() => {
+                elapsed++;
+                if (elapsed < 5) return;
+                const note = elapsed < 15
+                    ? 'Still working — server may be waking up...'
+                    : `Still working... ${elapsed}s (large videos take longer)`;
+                st.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i><span>${note}</span>`;
+            }, 1000);
 
             try {
                 const ctrl = new AbortController();
@@ -724,7 +753,9 @@ Then redeploy to Render.`;
                 showError(title, msg, hint);
                 toast(title, 'bad');
             } finally {
+                clearInterval(ticker);
                 setLoad(false);
+                detect();
             }
         }
 
@@ -766,7 +797,7 @@ Then redeploy to Render.`;
                 return;
             }
 
-            $('formatList').innerHTML = list.map(f => {
+            $('formatList').innerHTML = list.map((f, i) => {
                 const isAudio = f.quality === 'audio';
                 const isImage = f.quality === 'image';
                 const q = isAudio ? 'Audio' : isImage ? 'Image' : 'Video';
@@ -782,12 +813,53 @@ Then redeploy to Render.`;
                             ${note?`<span>${note}</span>`:''}
                         </div>
                         <div class="format-size">${sz}</div>
-                        <a href="${f.url}" target="_blank" rel="noopener noreferrer" class="dl-link" onclick="toast('Starting download...','ok')">
-                            <i class="fas fa-download"></i> DL
-                        </a>
+                        <button class="dl-link" data-idx="${i}" type="button">
+                            <i class="fas fa-download"></i> <span class="dl-label">DL</span>
+                        </button>
                     </div>
                 `;
             }).join('');
+
+            $('formatList').querySelectorAll('.dl-link').forEach(btn => {
+                btn.addEventListener('click', () => downloadMedia(formats[+btn.dataset.idx], btn));
+            });
+        }
+
+        // ─── Download (real file save, not just a new tab) ───
+        function sanitizeFilename(s) {
+            return (s || 'download').replace(/[^a-z0-9\-_. ]/gi, '_').slice(0, 80);
+        }
+
+        async function downloadMedia(f, btn) {
+            if (!f || !f.url) return;
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> <span class="dl-label">...</span>';
+
+            try {
+                const res = await fetch(f.url);
+                if (!res.ok) throw new Error('Download failed');
+                const blob = await res.blob();
+                const objUrl = URL.createObjectURL(blob);
+                const name = `${sanitizeFilename($('vTitle').textContent)}.${f.ext || 'mp4'}`;
+
+                const a = document.createElement('a');
+                a.href = objUrl;
+                a.download = name;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(objUrl), 4000);
+
+                toast('Download started', 'ok');
+            } catch (err) {
+                console.error(err);
+                toast('Direct download blocked — opening in a new tab', 'bad');
+                window.open(f.url, '_blank');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = original;
+            }
         }
 
         // ─── Error ───
