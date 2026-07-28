@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         :root {
-            --bg: #050508;
-            --surface: #0f0f18;
-            --surface-2: #161622;
+            --bg: #030304;
+            --surface: #0c0c14;
+            --surface-2: #13131e;
             --cyan: #00e5ff;
             --pink: #ff0099;
             --purple: #b967ff;
@@ -19,8 +19,9 @@
             --text: #f0f0f5;
             --text-2: #a0a8b8;
             --text-3: #606878;
-            --border: rgba(255,255,255,0.06);
-            --border-accent: rgba(0,229,255,0.25);
+            --border: rgba(255,255,255,0.07);
+            --border-accent: rgba(0,229,255,0.3);
+            --grid-line: rgba(0,229,255,0.05);
         }
 
         * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -36,13 +37,45 @@
             overscroll-behavior-y:none;
         }
 
-        /* Static dark gradient background — zero animation, GPU-friendly */
+        /* Layered futuristic backdrop: base glow + fine grid + a slow scan sweep as the signature element */
         .bg {
             position:fixed; inset:0; z-index:0;
             background:
-                radial-gradient(ellipse 80% 60% at 20% 20%, rgba(0,229,255,0.06) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 50% at 85% 85%, rgba(255,0,153,0.04) 0%, transparent 60%),
+                radial-gradient(ellipse 70% 55% at 18% 15%, rgba(0,229,255,0.09) 0%, transparent 60%),
+                radial-gradient(ellipse 55% 45% at 88% 90%, rgba(185,103,255,0.07) 0%, transparent 60%),
+                radial-gradient(ellipse 40% 40% at 90% 10%, rgba(255,0,153,0.04) 0%, transparent 55%),
                 var(--bg);
+        }
+
+        .bg-grid {
+            position:fixed; inset:0; z-index:0;
+            background-image:
+                linear-gradient(var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 42px 42px;
+            -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 0%, transparent 75%);
+            mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 0%, transparent 75%);
+            opacity:0.6;
+        }
+
+        .bg-scan {
+            position:fixed; left:0; right:0; height:140px; z-index:0;
+            top:-140px;
+            background: linear-gradient(180deg, transparent, rgba(0,229,255,0.05), transparent);
+            animation: scanSweep 9s ease-in-out infinite;
+            pointer-events:none;
+        }
+
+        @keyframes scanSweep {
+            0%   { transform: translateY(0); opacity:0; }
+            10%  { opacity:1; }
+            50%  { transform: translateY(65vh); opacity:1; }
+            90%  { opacity:0; }
+            100% { transform: translateY(100vh); opacity:0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .bg-scan { animation: none; display:none; }
         }
 
         .app {
@@ -101,11 +134,12 @@
 
         /* ─── Card ─── */
         .card {
+            position:relative;
             background:var(--surface);
             border:1px solid var(--border);
             border-radius:20px;
             padding:24px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,229,255,0.03), 0 0 40px rgba(0,229,255,0.04);
             animation: fadeIn 0.5s ease 0.1s both;
         }
 
@@ -181,9 +215,13 @@
             color:#000; font-size:16px; font-weight:800;
             font-family:inherit; cursor:pointer;
             display:flex; align-items:center; justify-content:center; gap:10px;
-            box-shadow: 0 4px 24px rgba(0,229,255,0.2);
+            box-shadow: 0 4px 24px rgba(0,229,255,0.25), 0 0 40px rgba(185,103,255,0.12);
             transition: transform 0.15s ease, box-shadow 0.2s ease;
             touch-action: manipulation;
+        }
+
+        .fetch-btn:hover {
+            box-shadow: 0 6px 30px rgba(0,229,255,0.35), 0 0 50px rgba(185,103,255,0.18);
         }
 
         .fetch-btn:active { transform:scale(0.98); }
@@ -485,6 +523,8 @@
 </head>
 <body>
     <div class="bg"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-scan"></div>
 
     <div class="app">
         <header class="header">
@@ -754,8 +794,7 @@ Then redeploy to Render.`;
         function showError(title, msg, hint) {
             $('errTitle').textContent = title;
             $('errMsg').textContent = msg;
-            $('errHint').innerHTML = hint ? hint.replace(/
-/g,'<br>') : '';
+            $('errHint').innerHTML = hint ? hint.replace(/\n/g,'<br>') : '';
             $('errHint').style.display = hint ? 'block' : 'none';
             $('errorBox').classList.add('show');
         }
