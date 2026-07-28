@@ -17,11 +17,13 @@ GET /media/<filename>
 
 import os
 from flask import Flask, request, jsonify, send_from_directory, abort
+from flask_cors import CORS
 
 from extractor import extract_and_download, MEDIA_DIR, UnsupportedURLError, BlockedPlatformError
 from cleanup import start_cleanup_thread, METADATA_STORE, FILE_TTL_SECONDS
 
 app = Flask(__name__)
+CORS(app, origins=["*"])
 
 BASE_URL = os.environ.get("BASE_URL", "http://localhost:5000")
 
